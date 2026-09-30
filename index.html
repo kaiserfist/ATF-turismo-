@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ATF · A Toa em Floripa — Experiência</title>
+  <style>
+    :root {
+      --bg: #0b1512;
+      --cream: #f2f0e6;
+      --sun: #f2960c;
+      --teal: #0ba6b8;
+      --green: #128a4a;
+      --muted: #8a9088;
+      --card: rgba(18, 30, 26, 0.72);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--cream);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ===== STAGE: uma cena por vez ===== */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.7s ease, visibility 0.7s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .scene.is-active {
+      opacity: 1;
+      visibility: visible;
+      z-index: 2;
+    }
+
+    .scene-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transform: scale(1.05);
+      transition: transform 6s ease-out;
+    }
+
+    .scene.is-active .scene-bg {
+      transform: scale(1);
+    }
+
+    .scene-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(11, 21, 18, 0.92) 0%,
+        rgba(11, 21, 18, 0.45) 40%,
+        rgba(11, 21, 18, 0.2) 100%
+      );
+    }
+
+    /* ===== CONTEÚDO DA CENA ===== */
+    .scene-content {
+      position: relative;
+      z-index: 3;
+      padding: 28px 24px 110px;
+      max-width: 640px;
+    }
+
+    .scene-kicker {
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--sun);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .scene-title {
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: clamp(2.4rem, 8vw, 3.6rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .scene-text {
+      font-size: 1rem;
+      line-height: 1.45;
+      color: rgba(242, 240, 230, 0.88);
+      max-width: 28rem;
+      margin-bottom: 20px;
+    }
+
+    .scene-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .pill.green { background: var(--green); }
+    .pill.sun { background: var(--sun); color: var(--bg); }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 14px 20px;
+      border-radius: 10px;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--sun);
+      color: var(--bg);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--cream);
+      border: 1px solid rgba(242, 240, 230, 0.35);
+    }
+
+    /* ===== NAVEGAÇÃO INFERIOR (módulos) ===== */
+    .nav-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(11, 21, 18, 0.95), rgba(11, 21, 18, 0.75), transparent);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-item {
+      flex: 0 0 auto;
+      min-width: 118px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(242, 240, 230, 0.12);
+      background: var(--card);
+      color: var(--cream);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .nav-item strong {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .nav-item span {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .nav-item.is-active {
+      border-color: var(--sun);
+      background: rgba(242, 150, 12, 0.12);
+    }
+
+    .nav-item.is-reserve {
+      border-color: var(--teal);
+      background: rgba(11, 166, 184, 0.15);
+    }
+
+    .nav-item.is-reserve strong { color: var(--teal); }
+
+    /* ===== TOPO ===== */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: linear-gradient(to bottom, rgba(11, 21, 18, 0.75), transparent);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .brand-text {
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-text b {
+      font-weight: 800;
+    }
+
+    .brand-text b span:nth-child(1) { color: var(--sun); }
+    .brand-text b span:nth-child(2) { color: var(--green); }
+    .brand-text b span:nth-child(3) { color: var(--teal); }
+
+    .progress {
+      display: flex;
+      gap: 5px;
+    }
+
+    .progress i {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(242, 240, 230, 0.25);
+    }
+
+    .progress i.on {
+      background: var(--sun);
+    }
+
+    /* ===== CENA RESERVA ===== */
+    .scene-reserve .scene-bg {
+      background: radial-gradient(ellipse at 30% 20%, #1a2e28 0%, var(--bg) 55%);
+    }
+
+    .scene-reserve .scene-content {
+      max-width: 480px;
+      margin: auto 0 0;
+      padding-bottom: 130px;
+    }
+
+    .reserve-box {
+      background: rgba(18, 30, 26, 0.85);
+      border: 1px solid rgba(242, 150, 12, 0.35);
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .reserve-box h2 {
+      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-size: 1.8rem;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .reserve-box p {
+      color: rgba(242, 240, 230, 0.8);
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .wa-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #25d366;
+      color: #06210f;
+      font-weight: 800;
+      text-decoration: none;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+
+    /* ===== MÓDULO: como editar ===== */
+    /*
+      PARA ADICIONAR UM PASSEIO:
+      1. Copie um bloco <section class="scene" ...> e mude id, data-index, textos e background-image
+      2. Adicione um botão .nav-item com data-go="id-da-cena"
+      3. Atualize o array SCENES no JS no final do arquivo
+    */
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">
+      <img src="assets/logo-atf.png" alt="ATF" />
+      <div class="brand-text">
+        <b><span>A</span><span>T</span><span>F</span></b> · A Toa em Floripa
+      </div>
+    </div>
+    <div class="progress" id="progress" aria-hidden="true"></div>
+  </header>
+
+  <main class="stage" id="stage">
+
+    <!-- MÓDULO 1: CAMPECHE -->
+    <section class="scene is-active" id="campeche" data-index="0">
+      <div class="scene-bg" style="background-image:url('assets/campeche-hero.jpg')"></div>
+      <div class="scene-content">
+        <p class="scene-kicker">Passeio de escuna · Dia inteiro</p>
+        <h1 class="scene-title">Ilha do<br>Campeche</h1>
+        <p class="scene-text">
+          Saída da Barra da Lagoa, trajeto pelas praias do leste e ~4 horas na ilha.
+          Escolha Escuna Monarca ou Lagomar — valor sob consulta.
+        </p>
+        <div class="scene-meta">
+          <span class="pill">Praias</span>
+          <span class="pill green">Natureza</span>
+          <span class="pill sun">~8h</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-next>Próxima experiência</button>
+          <button class="btn btn-ghost" data-go="reserva">Reservar este</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 2: NO MAR / OUTRO BARCO -->
+    <section class="scene" id="mar" data-index="1">
+      <div class="scene-bg" style="background-image:url('assets/campeche-barco.jpg')"></div>
+      <div class="scene-content">
+        <p class="scene-kicker">No barco · Vista real</p>
+        <h1 class="scene-title">Navegando<br>na ilha</h1>
+        <p class="scene-text">
+          Do deck ao mar aberto: a mesma energia do vídeo de referência —
+          uma cena grande, depois a troca para o próximo momento.
+        </p>
+        <div class="scene-meta">
+          <span class="pill">Escuna</span>
+          <span class="pill green">Foto real</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-next>Continuar</button>
+          <button class="btn btn-ghost" data-go="campeche">Voltar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 3: DESEMBARQUE / ÁGUA -->
+    <section class="scene" id="agua" data-index="2">
+      <div class="scene-bg" style="background-image:url('assets/desembarque.jpg')"></div>
+      <div class="scene-content">
+        <p class="scene-kicker">Chegada · Pé na areia</p>
+        <h1 class="scene-title">Desembarque<br>na ilha</h1>
+        <p class="scene-text">
+          Saiu do barco, entrou na água. Aqui você troca a foto por mergulho
+          ou praia quando tiver o material do Drive.
+        </p>
+        <div class="scene-meta">
+          <span class="pill">Ilha</span>
+          <span class="pill green">Livre</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-next>Próxima cena</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 4: PLACEHOLDER BALONISMO / OUTRO -->
+    <section class="scene" id="ceu" data-index="3">
+      <div class="scene-bg" style="background-image:url('assets/lagomar.jpg')"></div>
+      <div class="scene-content">
+        <p class="scene-kicker">Módulo extra · Troque a foto</p>
+        <h1 class="scene-title">Do mar<br>ao céu</h1>
+        <p class="scene-text">
+          Espaço reservado para balonismo ou outro passeio radical.
+          É só trocar a imagem de fundo e os textos deste bloco.
+        </p>
+        <div class="scene-meta">
+          <span class="pill sun">Modular</span>
+          <span class="pill">Balonismo</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-next>Fechar experiência</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO FINAL: RESERVA -->
+    <section class="scene scene-reserve" id="reserva" data-index="4">
+      <div class="scene-bg"></div>
+      <div class="scene-content">
+        <div class="reserve-box">
+          <p class="scene-kicker">Última tela</p>
+          <h2>Viva essa experiência.<br>Reserve aqui.</h2>
+          <p>
+            Fale no WhatsApp da ATF. Informe o passeio, a data e quantas pessoas.
+            Respondemos com a melhor opção (Monarca, Lagomar e parceiros).
+          </p>
+          <a class="wa-link"
+             href="https://wa.me/5548920034765?text=Ol%C3%A1%20ATF!%20Quero%20reservar%20uma%20experi%C3%AAncia%20em%20Floripa."
+             target="_blank" rel="noopener">
+            WhatsApp · 48 92003-4765
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="nav-bar" aria-label="Passeios">
+    <button class="nav-item is-active" data-go="campeche">
+      <strong>Campeche</strong>
+      <span>Escuna · dia</span>
+    </button>
+    <button class="nav-item" data-go="mar">
+      <strong>No barco</strong>
+      <span>Navegando</span>
+    </button>
+    <button class="nav-item" data-go="agua">
+      <strong>Na ilha</strong>
+      <span>Desembarque</span>
+    </button>
+    <button class="nav-item" data-go="ceu">
+      <strong>Céu</strong>
+      <span>Balonismo</span>
+    </button>
+    <button class="nav-item is-reserve" data-go="reserva">
+      <strong>Reserve</strong>
+      <span>WhatsApp</span>
+    </button>
+  </nav>
+
+  <script>
+    /* =========================================================
+       MÓDULOS — ordem da experiência
+       Para incluir um passeio novo: acrescente o id aqui
+       e crie a <section class="scene" id="..."> correspondente
+       ========================================================= */
+    const SCENES = ["campeche", "mar", "agua", "ceu", "reserva"];
+
+    const stage = document.getElementById("stage");
+    const progress = document.getElementById("progress");
+    let current = 0;
+
+    function buildProgress() {
+      progress.innerHTML = SCENES.map((_, i) =>
+        `<i class="${i === current ? "on" : ""}"></i>`
+      ).join("");
+    }
+
+    function goTo(id) {
+      const idx = SCENES.indexOf(id);
+      if (idx < 0) return;
+      current = idx;
+
+      document.querySelectorAll(".scene").forEach((el) => {
+        el.classList.toggle("is-active", el.id === id);
+      });
+
+      document.querySelectorAll(".nav-item").forEach((btn) => {
+        btn.classList.toggle("is-active", btn.getAttribute("data-go") === id);
+      });
+
+      buildProgress();
+    }
+
+    function next() {
+      const n = Math.min(current + 1, SCENES.length - 1);
+      goTo(SCENES[n]);
+    }
+
+    document.querySelectorAll("[data-go]").forEach((el) => {
+      el.addEventListener("click", () => goTo(el.getAttribute("data-go")));
+    });
+
+    document.querySelectorAll("[data-next]").forEach((el) => {
+      el.addEventListener("click", next);
+    });
+
+    // teclado (desktop)
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        next();
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const p = Math.max(current - 1, 0);
+        goTo(SCENES[p]);
+      }
+    });
+
+    buildProgress();
+  </script>
+</body>
+</html>
